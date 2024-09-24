@@ -1,0 +1,12 @@
+# Ignore node_modules in server and client
+/server/node_modules/
+/client/node_modules/
+
+# Ignore environment variables
+/server/.env
+
+# Ignore build files (if React gets built later)
+/client/build/
+
+# Ignore logs
+*.log
