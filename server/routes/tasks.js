@@ -1,34 +1,20 @@
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
+const verifyToken = require('../middleware/auth');
 
 module.exports = (db) => {
     const router = require('express').Router();
 
-    // Middleware to verify JWT
-    const verifyToken = (req, res, next) => {
-        const token = req.headers['authorization'] && req.headers['authorization'].split(' ')[1];
-        if (!token) {
-            return res.status(403).send('A token is required for authentication');
-        }
-        jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-            if (err) {
-                return res.status(401).send('Invalid Token');
-            }
-            req.userId = decoded.id; // Attach user ID to request
-            next();
-        });
-    };
-
-    // Create a new task
+    // Create a new task with UUID as id
     router.post('/', verifyToken, (req, res) => {
         const { title, status } = req.body;
-        const taskId = uuidv4(); // Generate a unique task ID
+        const taskId = uuidv4(); // Generate a unique task ID using UUID
 
         db.run(`INSERT INTO tasks (id, title, status, user_id) VALUES (?, ?, ?, ?)`, [taskId, title, status, req.userId], function(err) {
             if (err) {
                 return res.status(400).send(err.message);
             }
-            res.status(201).send({ message: 'Task created successfully' });
+            res.status(201).send({ message: 'Task created successfully', taskId });
         });
     });
 

@@ -24,7 +24,7 @@ db.serialize(() => {
     });
 
     db.run(`CREATE TABLE IF NOT EXISTS tasks (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id TEXT PRIMARY KEY,
         user_id TEXT,
         title TEXT NOT NULL,
         status TEXT DEFAULT 'pending',
