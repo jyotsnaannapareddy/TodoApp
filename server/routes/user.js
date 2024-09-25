@@ -36,4 +36,32 @@ router.get('/profile', verifyToken, (req, res) => {
     });
 });
 
+
+router.post('/reset-password', verifyToken, async (req, res) => {
+    const { newPassword } = req.body;
+    const userId = req.userId; // `req.userId` comes from the verifyToken middleware
+
+    // Check if newPassword is provided
+    if (!newPassword) {
+        return res.status(400).send('New password is required');
+    }
+
+    try {
+        // Hash the new password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        // Update the password in the database
+        db.run('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, userId], function(err) {
+            if (err) {
+                console.error('Error resetting password:', err); // Log the error
+                return res.status(500).send('Error resetting password');
+            }
+            res.sendStatus(204); // Successfully updated
+        });
+    } catch (error) {
+        console.error('Error hashing password:', error); // Log the error
+        return res.status(500).send('Error resetting password');
+    }
+});
+
 module.exports = router;

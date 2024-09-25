@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './profile.css'; // Optional CSS for styling
+import { useAuth } from '../context/AuthContext'; // Adjust the import path as needed
 
-const Profile = ({ token }) => {
+const Profile = () => {
+  const { token } = useAuth(); // Use the useAuth hook to access the token
   const [profile, setProfile] = useState({ name: '', email: '' });
   const [isEditing, setIsEditing] = useState(false); // Toggle between view and edit mode
   const [newName, setNewName] = useState('');
@@ -12,8 +14,10 @@ const Profile = ({ token }) => {
   // Fetch profile data on component mount
   useEffect(() => {
     const fetchProfile = async () => {
+      console.log('Token:', token); // Log the token to the console
+      if (!token) return; // If there's no token, do not fetch the profile
       try {
-        const res = await axios.get('http://localhost:5000/api/profile', {
+        const res = await axios.get('http://localhost:5000/api/user/profile', {
           headers: { Authorization: `Bearer ${token}` },
         });
         setProfile(res.data);
@@ -28,7 +32,7 @@ const Profile = ({ token }) => {
   const handleUpdateProfile = async () => {
     try {
       await axios.put(
-        'http://localhost:5000/api/profile',
+        'http://localhost:5000/api/user/profile',
         { name: newName || profile.name, email: newEmail || profile.email },
         { headers: { Authorization: `Bearer ${token}` } }
       );

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useAuth } from '../context/AuthContext'; // Import useAuth
 
-const Todo = ({ token }) => {
+const Todo = () => {
+  const { token } = useAuth(); // Get token directly from context
   const [tasks, setTasks] = useState([]);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskStatus, setNewTaskStatus] = useState('pending'); // Default status
@@ -11,7 +13,9 @@ const Todo = ({ token }) => {
 
   // Fetch tasks when the component mounts
   useEffect(() => {
+    console.log('Token:', token); // Log the token to the console
     const fetchTasks = async () => {
+      if (!token) return; // Guard clause: If token is not available, skip fetching tasks
       try {
         const res = await axios.get('http://localhost:5000/api/tasks', {
           headers: { Authorization: `Bearer ${token}` },
