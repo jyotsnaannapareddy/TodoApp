@@ -1,59 +1,45 @@
-import React, { useState } from "react";
-import jwtDecode from "jwt-decode";  // Import for decoding JWT tokens
-import { useNavigate } from "react-router-dom"; // Import useNavigate for redirection
-import Login from "./components/Login";
-import Signup from "./components/Signup";
-import Todo from "./components/Todo";
-import './App.css';                  // Keep your existing CSS import
+// App.jsx
+import React from 'react';
+import { Route, Routes } from 'react-router-dom';
+import Todo from './components/Todo';
+import Profile from './components/Profile';
+import Login from './components/Login';
+import Signup from './components/Signup';
+import Sidebar from './components/Sidebar';
+import ProtectedRoute from './components/ProtectedRoute';
+import { useAuth } from './context/AuthContext'; // Import useAuth
+import './App.css';
 
 function App() {
-  const [token, setToken] = useState(localStorage.getItem("token"));
-  const [isLogin, setIsLogin] = useState(true);  // State to toggle between login and signup
-  const user = token ? jwtDecode(token) : null;
-  const navigate = useNavigate(); // Initialize the navigate function
-
-  const handleSetToken = (newToken) => {
-    localStorage.setItem("token", newToken);
-    setToken(newToken);
-    navigate('/'); // Redirect to the Todo page after setting the token
-  };
+  const { isAuthenticated } = useAuth(); // Get authentication status
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>Todo Application</h1>
-
-        {token ? (
-          <div>
-            <h2>Welcome, {user ? user.name : 'User'}</h2>
-            <Todo token={token} />
-          </div>
-        ) : (
-          <div>
-            {isLogin ? (
-              <div>
-                <Login setToken={handleSetToken} />
-                <p>
-                  Don't have an account?{" "}
-                  <button onClick={() => setIsLogin(false)}>
-                    Sign up here
-                  </button>
-                </p>
-              </div>
-            ) : (
-              <div>
-                <Signup setToken={handleSetToken} />
-                <p>
-                  Already have an account?{" "}
-                  <button onClick={() => setIsLogin(true)}>
-                    Login here
-                  </button>
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-      </header>
+    <div className="app">
+      <Sidebar /> {/* Sidebar is rendered here */}
+      <div className="content">
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          
+          {/* Protected Routes */}
+          <Route 
+            path="/todo" 
+            element={
+              <ProtectedRoute>
+                <Todo />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/profile" 
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            } 
+          />
+        </Routes>
+      </div>
     </div>
   );
 }

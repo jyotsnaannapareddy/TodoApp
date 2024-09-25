@@ -3,45 +3,81 @@ import axios from 'axios';
 
 const Todo = ({ token }) => {
   const [tasks, setTasks] = useState([]);
-  const [newTask, setNewTask] = useState('');
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [newTaskStatus, setNewTaskStatus] = useState('pending'); // Default status
+  const [editingTaskId, setEditingTaskId] = useState(null); // Track which task is being edited
+  const [editingTaskTitle, setEditingTaskTitle] = useState(''); // Store the new title for the task being edited
+  const [editingTaskStatus, setEditingTaskStatus] = useState(''); // Store the new status for the task being edited
 
+  // Fetch tasks when the component mounts
   useEffect(() => {
     const fetchTasks = async () => {
       try {
-        const res = await axios.get('http://localhost:3000/todos', {
+        const res = await axios.get('http://localhost:5000/api/tasks', {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setTasks(res.data);
+        setTasks(res.data); // Assuming the backend returns an array of tasks
       } catch (err) {
-        console.error(err.response.data.msg);
+        console.error(err.response?.data?.msg || 'Error fetching tasks');
       }
     };
 
     fetchTasks();
   }, [token]);
 
+  // Handle adding a new task
   const handleAddTask = async () => {
     try {
       const res = await axios.post(
-        'http://localhost:3000/todos',
-        { task: newTask, status: 'pending' },
+        'http://localhost:5000/api/tasks',
+        { title: newTaskTitle, status: newTaskStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setTasks([...tasks, { id: res.data.id, task: newTask, status: 'pending' }]);
-      setNewTask('');
+      setTasks([...tasks, { id: res.data.taskId, title: newTaskTitle, status: newTaskStatus }]);
+      setNewTaskTitle('');
+      setNewTaskStatus('pending'); // Reset status to default
     } catch (err) {
-      console.error(err.response.data.msg);
+      console.error(err.response?.data?.msg || 'Error adding task');
     }
   };
 
+  // Handle task deletion
   const handleDeleteTask = async (id) => {
     try {
-      await axios.delete(`http://localhost:3000/todos/${id}`, {
+      await axios.delete(`http://localhost:5000/api/tasks/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setTasks(tasks.filter((task) => task.id !== id));
     } catch (err) {
-      console.error(err.response.data.msg);
+      console.error(err.response?.data?.msg || 'Error deleting task');
+    }
+  };
+
+  // Handle opening the edit form for a task
+  const handleEditTask = (task) => {
+    setEditingTaskId(task.id);
+    setEditingTaskTitle(task.title);
+    setEditingTaskStatus(task.status); // Set the current status for the task being edited
+  };
+
+  // Handle saving changes to the edited task (updating both title and status)
+  const handleSaveTask = async () => {
+    try {
+      await axios.put(
+        `http://localhost:5000/api/tasks/${editingTaskId}`,
+        { title: editingTaskTitle, status: editingTaskStatus }, // Sending both title and status
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setTasks(
+        tasks.map((task) =>
+          task.id === editingTaskId ? { ...task, title: editingTaskTitle, status: editingTaskStatus } : task
+        )
+      );
+      setEditingTaskId(null); // Exit edit mode
+      setEditingTaskTitle('');
+      setEditingTaskStatus('');
+    } catch (err) {
+      console.error(err.response?.data?.msg || 'Error saving task');
     }
   };
 
@@ -51,17 +87,50 @@ const Todo = ({ token }) => {
       <ul>
         {tasks.map((task) => (
           <li key={task.id}>
-            {task.task} - {task.status}{" "}
-            <button onClick={() => handleDeleteTask(task.id)}>Delete</button>
+            {editingTaskId === task.id ? (
+              // Show the edit form if the task is being edited
+              <div>
+                <input
+                  type="text"
+                  value={editingTaskTitle}
+                  onChange={(e) => setEditingTaskTitle(e.target.value)}
+                  placeholder="Edit task title"
+                />
+                <select
+                  value={editingTaskStatus}
+                  onChange={(e) => setEditingTaskStatus(e.target.value)}
+                >
+                  <option value="pending">Pending</option>
+                  <option value="completed">Completed</option>
+                  <option value="in progress">In Progress</option>
+                </select>
+                <button onClick={handleSaveTask}>Save</button>
+                <button onClick={() => setEditingTaskId(null)}>Cancel</button>
+              </div>
+            ) : (
+              <div>
+                {task.title} - {task.status}{" "}
+                <button onClick={() => handleEditTask(task)}>Edit</button>
+                <button onClick={() => handleDeleteTask(task.id)}>Delete</button>
+              </div>
+            )}
           </li>
         ))}
       </ul>
       <input
         type="text"
-        value={newTask}
-        onChange={(e) => setNewTask(e.target.value)}
+        value={newTaskTitle}
+        onChange={(e) => setNewTaskTitle(e.target.value)}
         placeholder="New Task"
       />
+      <select
+        value={newTaskStatus}
+        onChange={(e) => setNewTaskStatus(e.target.value)}
+      >
+        <option value="pending">Pending</option>
+        <option value="completed">Completed</option>
+        <option value="in progress">In Progress</option>
+      </select>
       <button onClick={handleAddTask}>Add Task</button>
     </div>
   );
